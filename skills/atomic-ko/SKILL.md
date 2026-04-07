@@ -10,7 +10,7 @@ argument-hint: "[구축할 컴포넌트 또는 레이아웃을 설명하세요]"
 > `display: flex` → `df`, `justify-content: center` → `jcc`, `align-items: center` → `aic`
 
 전체 클래스 레퍼런스는 [reference.md](reference.md)를 참고하세요.
-**클래스명을 추측하지 마세요.** 확실하지 않으면 반드시 MCP `lookup_class` 또는 `validate_classes`로 검증 후 사용하세요.
+**클래스명을 추측하지 마세요 — 안다고 확신하더라도.** 반드시 MCP `lookup_class`, `validate_classes`, 또는 `css_to_classes`로 검증 후 사용하세요. 예외 없음.
 
 ## 절대 규칙
 
@@ -22,17 +22,19 @@ argument-hint: "[구축할 컴포넌트 또는 레이아웃을 설명하세요]"
 6. **4px 간격 리듬** — 모든 간격 값은 4의 배수로
 7. **HEX 6자리 대문자** — `cFFFFFF`, `bg000000`
 
-## MCP 서버
+## MCP 서버 (필수)
 
-클래스를 모르면 **반드시** `atomic-css` MCP 서버로 확인하세요. 절대 추측하지 마세요:
+**항상** `atomic-css` MCP 서버를 사용하세요 — 안다고 확신하는 클래스도 예외 없이. 확신은 검증을 대체할 수 없습니다.
 - `lookup_class` — 클래스 → CSS 매핑 (사용 전 반드시 검증)
-- `validate_classes` — 유효성 검사 + 무효 클래스 대안 제안
-- `css_to_classes` — CSS 선언을 Atomic 클래스로 변환
+- `validate_classes` — 일괄 유효성 검사 + 무효 클래스 대안 제안
+- `css_to_classes` — CSS 선언을 Atomic 클래스로 변환 (Step 1에서 사용)
 - `search_by_css` — CSS 속성명으로 클래스 검색
 
 ```json
 { "mcpServers": { "atomic-css": { "type": "sse", "url": "https://mcp.atomiccss.dev/sse" } } }
 ```
+
+> **왜 필수인가?** 클래스명은 코드로 생성되며 미묘한 엣지 케이스(단위 모호성, 축약형 분해, 특수 문법)가 있습니다. 사람처럼 추측하면 그럴듯하지만 틀린 클래스가 나옵니다. MCP 서버가 유일한 정답 소스입니다.
 
 ---
 
@@ -49,7 +51,7 @@ table-layout: fixed     → tlf       user-select: none       → usn
 pointer-events: none    → pen       background-size: cover  → bsc
 ```
 
-이 규칙은 모든 CSS 속성에 적용됩니다. 확실하지 않으면 앞글자 약어를 먼저 시도하고, MCP로 검증하세요.
+이 규칙은 모든 CSS 속성에 적용됩니다. 추론만으로 사용하지 말고, 반드시 MCP로 검증하세요.
 
 ### 의미가 달라지는 접두사 (단위 유무에 따라)
 - `fs0` = `flex-shrink: 0` (단위 없음 → flex-shrink) vs `fs16px` = `font-size: 16px` (단위 있음 → font-size)
@@ -309,7 +311,24 @@ margin(m/mt/mr/mb/ml), top, right, bottom, left, letter-spacing, word-spacing, t
 
 $ARGUMENTS
 
-## 생성 가이드라인
+## 필수 3단계 워크플로우
+
+> **3단계를 반드시 순서대로 수행하세요. 어떤 단계도 건너뛰면 안 됩니다.**
+
+### Step 1: MCP 조회 (HTML 작성 전에 반드시)
+
+필요한 CSS 속성을 파악한 뒤, MCP로 올바른 클래스를 조회합니다:
+
+1. 컴포넌트에 필요한 CSS 속성 목록 작성 (레이아웃, 간격, 색상, 타이포그래피 등)
+2. `css_to_classes`로 CSS 선언 → Atomic 클래스 변환
+3. 특정 클래스가 확실하지 않으면 `lookup_class`로 검증
+4. CSS 속성의 접두사를 모르면 `search_by_css`로 검색
+
+**MCP로 검증된 클래스를 확보하기 전까지 HTML을 작성하지 마세요.**
+
+### Step 2: HTML 생성
+
+Step 1에서 MCP로 검증된 클래스만 사용하여:
 
 1. **Atomic CSS 클래스만 사용** — 인라인 스타일, CSS 파일 금지
 2. **Grid 레이아웃 우선** — 페이지 구조에 `dg` + `gtc` 사용
@@ -319,23 +338,22 @@ $ARGUMENTS
 6. **트랜지션** — 부드러운 UX를 위해 `tall200msease` 또는 `tall300ms`
 7. **4px 간격 리듬** — 4, 8, 12, 16, 20(2rem), 24(2-4rem), 32(3-2rem), 40(4rem)
 8. **20px 미만 → px, 20px 이상 → rem**
-9. **확실하지 않을 때** — MCP `lookup_class`로 검증하거나 [reference.md](reference.md) 확인
 
-## 생성 후 검증 (필수)
+### Step 3: MCP 검증 (사용자에게 제시하기 전에 반드시)
 
-HTML 생성 후, 사용자에게 제시하기 전에 반드시 아래 검증을 수행하세요:
+1. **생성된 HTML에서 모든 Atomic 클래스를 수집**
+2. **`validate_classes` 실행** — 전체 클래스 목록으로 일괄 검증. 무효한 클래스는 MCP 제안으로 수정
+3. **자체 점검** (MCP 불필요):
+   - `style=` 속성이 0개인지 확인
+   - `<style>` 태그나 외부 CSS 없는지 확인
+   - 주요 레이아웃 속성에 `sm-` 또는 `md-` 변형 있는지 확인
+   - 단위 규칙 (20px 미만 → px, 20px 이상 → rem)
+   - 간격 값이 4의 배수인지 확인
+   - HEX 색상이 6자리 대문자인지 확인
+   - 버튼/링크에 `hover-`와 transition 클래스 있는지 확인
+   - 시맨틱 HTML 태그 사용 여부
 
-1. **모든 클래스 검증** — 사용한 모든 Atomic 클래스에 `validate_classes` 실행. 무효한 클래스는 수정.
-2. **인라인 스타일 없음** — 출력에 `style=` 속성이 0개인지 확인
-3. **CSS 파일 없음** — `<style>` 태그나 외부 CSS 참조가 없는지 확인
-4. **반응형 확인** — 주요 레이아웃 속성(그리드 컬럼, display, font-size, padding)에 `sm-` 또는 `md-` 변형이 있는지 확인
-5. **단위 규칙** — 20px 미만은 `px`, 20px 이상은 `rem` 사용
-6. **간격 리듬** — 모든 간격 값이 4의 배수인지 확인
-7. **HEX 대문자** — 모든 색상 코드가 6자리 대문자 (`FFFFFF`, `ffffff` 아님)
-8. **인터랙션 상태** — 버튼/링크에 `hover-`와 transition 클래스 있는지 확인
-9. **시맨틱 HTML** — 적절한 태그 사용 (div 남발 지양)
-
-MCP를 사용할 수 없는 경우, [reference.md](reference.md)로 수동 검증하세요.
+MCP를 사용할 수 없는 경우, [reference.md](reference.md)로 수동 검증하세요 — 단, 이는 폴백이지 기본이 아닙니다.
 
 ### 자주 사용하는 패턴
 ```html
