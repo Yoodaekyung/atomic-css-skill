@@ -10,8 +10,8 @@
             "name": "atomic-css",
             "description": "Generate HTML components using Atomic CSS utility classes with full class reference, responsive design, and MCP server integration",
             "source": {
-                "type": "git",
-                "url": "https://github.com/Yoodaekyung/atomic-css-skill"
+                "source": "github",
+                "repo": "Yoodaekyung/atomic-css-skill"
             }
         }
     ]
