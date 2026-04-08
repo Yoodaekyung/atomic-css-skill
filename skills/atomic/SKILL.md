@@ -334,9 +334,21 @@ $ARGUMENTS
 - **No `<style>` tags or CSS files** — never create separate CSS under any circumstance
 - **No assumptions for missing data** — ask the user when Figma data is incomplete
 
+### When Figma MCP Returns Code (Preferred Path)
+
+If Figma MCP (`get_design_context`, etc.) returns HTML+CSS code, you can extract CSS properties directly — this is more accurate:
+
+1. **Receive HTML+CSS code** — get code output from Figma MCP
+2. **Extract CSS properties** — collect CSS declarations (color, padding, display, etc.) from the code
+3. **Convert via `css_to_classes`** — transform extracted CSS into Atomic CSS classes
+4. **Rebuild HTML** — generate HTML with Atomic classes replacing the original CSS
+5. **Validate with `validate_classes`** — verify before output
+
+> If Figma MCP returns only metadata (not code), fall back to the default 3-step workflow below.
+
 ---
 
-## Mandatory 3-Step Workflow
+## Mandatory 3-Step Workflow (Default Path)
 
 > **You MUST follow all 3 steps in order. Skipping any step is a violation.**
 > **For large pages, repeat these 3 steps for EACH section.**
