@@ -311,9 +311,35 @@ margin(m/mt/mr/mb/ml), top, right, bottom, left, letter-spacing, word-spacing, t
 
 $ARGUMENTS
 
+## Large Page Strategy (When Figma or design has many elements)
+
+> **NEVER process an entire page at once.** When there are too many elements, context overflow causes the AI to fall back to guessing — producing regular CSS classes instead of Atomic CSS. This is a critical failure mode.
+
+### Always Split Into Sections
+
+1. **Identify page structure first** — break the design into logical sections:
+   - Header/Nav, Hero, Product Grid, Features, CTA, Footer, etc.
+2. **Process each section independently** — apply the 3-step workflow below to each section separately
+3. **Complete one section before starting the next** — never process multiple sections simultaneously
+4. **Assemble at the end** — combine all sections into a single page
+
+### Context Overflow Detection — Split is MANDATORY when:
+- Figma data contains 20+ elements
+- User requests a full page or landing page
+- Design contains multiple independent UI blocks
+
+### Absolute Prohibitions
+- **No guessing HTML** — never write "this class is probably correct" without MCP verification
+- **No regular CSS classes** — `class="header"`, `class="card-title"` are NOT Atomic CSS
+- **No `<style>` tags or CSS files** — never create separate CSS under any circumstance
+- **No assumptions for missing data** — ask the user when Figma data is incomplete
+
+---
+
 ## Mandatory 3-Step Workflow
 
 > **You MUST follow all 3 steps in order. Skipping any step is a violation.**
+> **For large pages, repeat these 3 steps for EACH section.**
 
 ### Step 1: MCP Lookup (BEFORE writing any HTML)
 
